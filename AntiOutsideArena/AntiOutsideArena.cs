@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,12 @@ namespace AntiOutsideArena
     public class AntiOutsideArena : RocketPlugin<Configuration>
     {
         private Dictionary<ArenaPlayer, DateTime> OutsidePlayers = new Dictionary<ArenaPlayer, DateTime>();
+        private static FieldInfo sqrRadius;
+
+        protected override void Load()
+        {
+            sqrRadius = typeof(LevelManager).GetField("arenaSqrRadius", BindingFlags.NonPublic | BindingFlags.Static);
+        }
 
         void FixedUpdate()
         {
@@ -35,9 +42,9 @@ namespace AntiOutsideArena
                     if (!OutsidePlayers.ContainsKey(LevelManager.arenaPlayers[i]))
                         OutsidePlayers.Add(LevelManager.arenaPlayers[i], DateTime.Now);
 
-                    if((DateTime.Now - OutsidePlayers[LevelManager.arenaPlayers[i]]).TotalSeconds >= this.Configuration.Instance.SecondsUntilKill)
+                    if((DateTime.Now - OutsidePlayers[LevelManager.arenaPlayers[i]]).TotalSeconds >= Configuration.Instance.SecondsUntilKill)
                     {
-                        LevelManager.arenaPlayers[i].steamPlayer.player.life.askDamage(10, Vector3.up * 10f, EDeathCause.ARENA, ELimb.SPINE, CSteamID.Nil, out EPlayerKill ePlayerKill);
+                        LevelManager.arenaPlayers[i].steamPlayer.player.life.askDamage(255, Vector3.up * 10f, EDeathCause.ARENA, ELimb.SPINE, CSteamID.Nil, out EPlayerKill ePlayerKill);
                         remove.Add(LevelManager.arenaPlayers[i]);
                     }
                 }
@@ -58,8 +65,9 @@ namespace AntiOutsideArena
         public static bool IsPlayerOutsideArena(ArenaPlayer player)
         {
             float num = Mathf.Pow(player.steamPlayer.player.transform.position.x - LevelManager.arenaCenter.x, 2f) + Mathf.Pow(player.steamPlayer.player.transform.position.z - LevelManager.arenaCenter.z, 2f);
+            float arenaSqrRadius = (float)sqrRadius.GetValue(null);
 
-            return (num > LevelManager.arenaRadius);
+            return (num > arenaSqrRadius);
         }
     }
 }
