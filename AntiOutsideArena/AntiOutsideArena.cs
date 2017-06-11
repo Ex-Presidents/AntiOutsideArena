@@ -20,6 +20,8 @@ namespace AntiOutsideArena
         protected override void Load()
         {
             sqrRadius = typeof(LevelManager).GetField("arenaSqrRadius", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Provider.onEnemyDisconnected += new Provider.EnemyDisconnected(OnPlayerExit);
         }
 
         void FixedUpdate()
@@ -62,8 +64,24 @@ namespace AntiOutsideArena
             }
         }
 
+        private void OnPlayerExit(SteamPlayer player)
+        {
+            ArenaPlayer ply = OutsidePlayers.Keys.FirstOrDefault(a => a.steamPlayer == player);
+
+            if (ply == null)
+                return;
+            OutsidePlayers.Remove(ply);
+        }
+
         public static bool IsPlayerOutsideArena(ArenaPlayer player)
         {
+            if (player == null)
+                return false;
+            if (player.steamPlayer == null)
+                return false;
+            if (player.steamPlayer.player == null)
+                return false;
+
             float num = Mathf.Pow(player.steamPlayer.player.transform.position.x - LevelManager.arenaCenter.x, 2f) + Mathf.Pow(player.steamPlayer.player.transform.position.z - LevelManager.arenaCenter.z, 2f);
             float arenaSqrRadius = (float)sqrRadius.GetValue(null);
 
